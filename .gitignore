@@ -1,0 +1,20 @@
+# Build and dependency artifacts
+**/node_modules/
+**/dist/
+**/coverage/
+**/test-results/
+**/playwright-report/
+*.tsbuildinfo
+
+# Local credentials and machine state
+.env
+.env.*
+!.env.example
+*.local
+.aws/
+.codex/
+.agents/
+.tools/
+.venv/
+**/__pycache__/
+.DS_Store
