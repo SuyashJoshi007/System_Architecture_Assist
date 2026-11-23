@@ -26,4 +26,13 @@ Open `http://127.0.0.1:5173`. See [frontend instructions](web/README.md) for sup
 
 ## Review and delivery
 
-Work is proposed on feature branches and reviewed through pull requests into `main`. Production deployment follows review and successful CI. Detailed contribution and deployment instructions accompany the first frontend PR.
+Work is proposed on feature branches and reviewed through pull requests into `main`. The protected branch requires the **Test and build** check and resolved conversations. Production deployment to GitHub Pages follows a reviewed merge, successful CI, and the maintainer's explicit approval in the `github-pages` environment.
+
+```sh
+cd web
+npm ci
+npx playwright install chromium
+npm run check
+```
+
+Checks cover unit/component behavior with coverage thresholds, TypeScript, the production build, and real-browser diagram workflows. See [contribution and deployment instructions](CONTRIBUTING.md). The first frontend PR remains unmerged until review.
