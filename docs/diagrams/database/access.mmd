@@ -1,0 +1,34 @@
+erDiagram
+  direction TB
+  USER ||..o{ WORKSPACE_SESSION : participates
+  WORKSPACE ||..|{ WORKSPACE_SESSION : has
+
+  USER {
+    bigint id PK
+    varchar_254 email UK
+    varchar_150 first_name
+    varchar_150 last_name
+    varchar_128 password "Django encoded hash"
+    boolean is_active
+    timestamptz date_joined
+    timestamptz last_login "nullable"
+    boolean is_staff
+    boolean is_superuser
+  }
+  WORKSPACE {
+    bigint id PK
+    uuid ref_id UK "shared joining reference"
+    varchar_200 name
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  WORKSPACE_SESSION {
+    bigint id PK
+    bigint workspace_id FK
+    bigint user_id FK
+    boolean is_active
+    boolean is_owner
+    timestamptz revoked_at "nullable"
+    timestamptz created_at
+    timestamptz updated_at
+  }

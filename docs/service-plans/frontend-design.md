@@ -97,20 +97,30 @@ SVG sources are stored alongside each PNG with the same basename. The earlier te
 
 | Screen | Main content and action |
 |---|---|
-| Workspace list | Compact rows with name and the user's session status; Create workspace; inactive entries lead to the agreed invite rejoin flow |
-| Invite entry | Verify the signed-in account and redeem its reusable invite; show a clear mismatch/access error |
-| Requirements | One structured brief with functional/nonfunctional requirements and constraints; Save revision, Request review, and authorized Approve actions |
+| Workspace list | Compact rows with name and the user's non-revoked session status; Create workspace; inactive collaborators return through the shared link; an enabled inactive non-revoked owner can reactivate their own session without that link |
+| Shared-link entry | Sign in with an enabled account and join/reactivate a non-revoked session using the workspace's reusable `ref_id`; it is not recipient-bound; show a clear invalid-link/access-removed error |
+| Requirements | One structured brief with functional/nonfunctional requirements and constraints; Save revision, Request review, and select a saved revision for generation |
 | Diagrams | Named diagram list and large canvas; compact node toolbar; collaborator presence; saved/unsaved indicator; contextual review/comments |
-| HLD and LLD | Readable document view with edit mode, revision selector, approval state, pinned source references, generation status, and export |
-| Settings | Theme preference; owner invitation controls; reserved model connection/health area pending its API contract |
+| HLD and LLD | Readable document view with edit mode, revision selector, pinned source references, potentially stale indicator, generation status, and export |
+| Settings | Theme preference; owner shared-link controls pending their API contract; reserved model connection/health area pending its API contract |
 
-The workspace header shows its name and the current view. Display draft/approved and potentially stale states near the artifact revision. Do not imply a diagram itself has a document approval state. Show owner-only controls only where appropriate; the API remains the authority.
+The workspace header shows its name and current view. Display revision identity, save status, pinned inputs, and potentially stale indicators. There are no document approval buttons, badges, designated approvers, or sign-off steps. Owner-only controls apply to workspace administration; the API remains the authority.
 
 Requirements and document edits stay in a local unsaved buffer until Save revision. A `409` conflict preserves those edits and offers a comparison with the newer revision. Diagram changes use live collaboration and continuous persistence; save status changes only after durable acknowledgement.
 
-AI review opens a contextual panel with the source revision, recommendation rationale, tradeoffs, and explicit Accept/Reject actions. Acceptance creates a new draft; it does not imply document approval. Keep decisions attributed through the active session on the server. Long-running generation/export shows queued/running/failed/succeeded status with bounded polling; do not block navigation while work runs.
+HLD/LLD content is Markdown stored as complete immutable revision snapshots. The document view renders the selected revision's Markdown, and editing saves a new complete revision rather than mutating the selected historical content. Editor/renderer library selection and the exact save payload remain open; no document screen is implemented by this format decision.
+
+Manual document edits retain the base revision's exact source references by default. Display those pinned requirements/diagram/HLD versions without implying that manual edits have been automatically verified. Changing sources must be explicit and creates a new revision; never silently replace references with newer versions. An LLD's requirements and diagram references are reached through its pinned HLD. Exact source-selection UI and request fields remain open.
+
+Comments are scoped to the selected exact revision and optional diagram component/document section. Display a root comment with one level of replies; replies inherit its target rather than offering another target picker. Comments are append-only in V1, so do not show edit/delete controls. When a newer revision is selected, do not silently move old comments onto changed content. Author attribution comes from the backend's stored workspace session. Anchor selection and exact thread pagination/UI remain to be planned.
+
+The current working diagram can be newer than its latest historical revision. Live persistence uses binary collaboration updates and consolidated working state; history contains complete immutable JSON snapshots created periodically when content changed and before AI review. Selecting a historical revision displays its snapshot read-only without altering the current working diagram. Snapshot timing, retention, and the exact history-read API remain open. The current local frontend preview does not implement this backend persistence contract.
+
+AI review opens a contextual panel with the source revision, recommendation rationale, tradeoffs, and explicit Apply/Reject actions. Any active participant can apply a suggestion to create a new revision, with no subsequent sign-off. Keep actions attributed through the active session on the server; unapplied suggestions never silently modify saved content. Long-running generation/export shows queued/running/failed/succeeded status with bounded polling; do not block navigation while work runs.
 
 The same workspace remains accessible through the user's active session during a network drop, but the UI shows disconnected/unsaved state until communication resumes. Explicit Leave workspace deactivates the session. The session and live presence indicators describe different things.
+
+Owner removal is distinct from Leave: it records `revoked_at`, deactivates the session, and ends collaboration access while preserving stored attribution. A shared joining link cannot restore revoked access. React to server access removal by ending the connection and stopping workspace writes; retain local unsaved state without claiming it was saved. Hide revoked workspaces from the removed participant's normal list. Owner-removal/return UI and exact error payloads remain to be planned; the owner cannot be revoked, and no participant-facing restoration flow is selected for the initial core.
 
 ## Proposed performance approach
 
@@ -127,7 +137,7 @@ Proposed initial budget: at most 200 kB gzip of first-load JavaScript for the wo
 
 Use visible keyboard focus, labeled controls, meaningful headings, and keyboard access to primary actions. Provide a node/property list as an alternative way to inspect and edit diagram elements. Announce save/job state changes without interrupting typing.
 
-On desktop, the main view gets most width and the right panel opens on demand. On tablets, show one side panel at a time. For narrow screens, prioritize requirements/document reading, comments, approvals, and job status; the extent of phone canvas editing needs a separate scope decision.
+On desktop, the main view gets most width and the right panel opens on demand. On tablets, show one side panel at a time. For narrow screens, prioritize requirements/document reading, comments, explicit suggestion actions, and job status; the extent of phone canvas editing needs a separate scope decision.
 
 ## Proposed frontend planning sequence
 

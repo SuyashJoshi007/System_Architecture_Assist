@@ -1,0 +1,127 @@
+erDiagram
+  direction TB
+  USER ||..o{ WORKSPACE_SESSION : participates
+  WORKSPACE ||..|{ WORKSPACE_SESSION : has
+  WORKSPACE ||..|| REQUIREMENTS_DOCUMENT : has
+  REQUIREMENTS_DOCUMENT ||..o{ REQUIREMENTS_REVISION : versions
+  WORKSPACE ||..o{ ARCHITECTURE_DIAGRAM : contains
+  ARCHITECTURE_DIAGRAM ||--|| DIAGRAM_WORKING_STATE : maintains
+  ARCHITECTURE_DIAGRAM ||--o{ DIAGRAM_UPDATE : accumulates
+  ARCHITECTURE_DIAGRAM ||..|{ DIAGRAM_REVISION : snapshots
+  WORKSPACE ||..|{ DESIGN_DOCUMENT : "two document slots"
+  DESIGN_DOCUMENT ||..o{ DESIGN_REVISION : versions
+  DESIGN_REVISION ||..o{ DESIGN_REVISION_SOURCE : uses
+  REQUIREMENTS_REVISION o|..o{ DESIGN_REVISION_SOURCE : "requirements source"
+  DIAGRAM_REVISION o|..o{ DESIGN_REVISION_SOURCE : "diagram source"
+  DESIGN_REVISION o|..o{ DESIGN_REVISION_SOURCE : "upstream HLD"
+  WORKSPACE ||..o{ COMMENT : contains
+  WORKSPACE_SESSION ||..o{ COMMENT : writes
+  REQUIREMENTS_REVISION o|..o{ COMMENT : "requirements target"
+  DIAGRAM_REVISION o|..o{ COMMENT : "diagram target"
+  DESIGN_REVISION o|..o{ COMMENT : "document target"
+  COMMENT o|..o{ COMMENT : "root replies"
+
+  USER {
+    bigint id PK
+    varchar_254 email UK
+    varchar_150 first_name
+    varchar_150 last_name
+    varchar_128 password "Django encoded hash"
+    boolean is_active
+    timestamptz date_joined
+    timestamptz last_login "nullable"
+    boolean is_staff
+    boolean is_superuser
+  }
+  WORKSPACE {
+    bigint id PK
+    uuid ref_id UK "shared joining reference"
+    varchar_200 name
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  WORKSPACE_SESSION {
+    bigint id PK
+    bigint workspace_id FK
+    bigint user_id FK
+    boolean is_active
+    boolean is_owner
+    timestamptz revoked_at "nullable"
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  REQUIREMENTS_DOCUMENT {
+    bigint id PK
+    bigint workspace_id FK, UK
+    timestamptz created_at
+  }
+  REQUIREMENTS_REVISION {
+    bigint id PK
+    bigint requirements_document_id FK
+    integer revision_number
+    jsonb structured_content "complete snapshot"
+    timestamptz created_at
+  }
+  ARCHITECTURE_DIAGRAM {
+    bigint id PK
+    bigint workspace_id FK
+    varchar_200 name
+    diagram_kind diagram_kind "architecture or environment"
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  DIAGRAM_REVISION {
+    bigint id PK
+    bigint architecture_diagram_id FK
+    integer revision_number
+    jsonb diagram_state "complete snapshot"
+    bigint source_update_seq "durable source boundary"
+    timestamptz created_at
+  }
+  DIAGRAM_WORKING_STATE {
+    bigint diagram_id PK, FK
+    bytea base_state
+    bigint compacted_through_seq
+    bigint last_update_seq
+    integer format_version
+    timestamptz updated_at
+  }
+  DIAGRAM_UPDATE {
+    bigint diagram_id PK, FK
+    bigint sequence_number PK
+    bytea update_data
+    timestamptz created_at
+  }
+  DESIGN_DOCUMENT {
+    bigint id PK
+    bigint workspace_id FK
+    design_document_kind document_kind "hld or lld"
+    timestamptz created_at
+  }
+  DESIGN_REVISION {
+    bigint id PK
+    bigint design_document_id FK
+    integer revision_number
+    text content "complete Markdown"
+    jsonb generation_provenance "nullable"
+    timestamptz created_at
+  }
+  COMMENT {
+    bigint id PK
+    bigint workspace_id FK
+    bigint author_session_id FK
+    bigint requirements_revision_id FK "nullable"
+    bigint diagram_revision_id FK "nullable"
+    bigint design_revision_id FK "nullable"
+    jsonb target_anchor "nullable"
+    bigint parent_comment_id FK "nullable root reference"
+    text body
+    timestamptz created_at
+  }
+  DESIGN_REVISION_SOURCE {
+    bigint id PK
+    bigint design_revision_id FK
+    bigint requirements_revision_id FK "nullable"
+    bigint diagram_revision_id FK "nullable"
+    bigint source_design_revision_id FK "nullable"
+  }

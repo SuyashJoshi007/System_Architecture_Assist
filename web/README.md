@@ -52,7 +52,7 @@ Keyboard shortcuts outside text fields: `V` selects, `H` pans, `C` connects, and
 
 This is a single-user frontend preview with browser-local storage. Authentication, session authorization, invitations, multi-user WebSocket sync, AI requests, server-side revision history, and document generation/export still require the planned backend services. The sample review is not model output. The JSON download is a local diagram backup, not the planned HLD/LLD PDF/Markdown export API.
 
-The original HTML's review-reset and Undo controls are not used as a production approval/rollback workflow. Historical decisions remain recorded. Model and approval actions must ultimately be enforced by the Core API through active workspace sessions.
+The original HTML's review-reset and Undo controls are not used as a production rollback workflow. Historical suggestion decisions remain recorded. The product has no formal document approval workflow; model requests and explicit suggestion actions must ultimately be authorized by the Core API through active workspace sessions. HLD generation selects saved requirements; LLD generation selects an existing HLD revision, without a sign-off prerequisite.
 
 Local checkpoints are created after completed editing gestures and explicit changes; production continuous collaboration persistence and periodic snapshot timing remain service work. Browser storage may be cleared or unavailable; download important local drafts before relying on them.
 
