@@ -1,0 +1,37 @@
+erDiagram
+  direction TB
+  DESIGN_REVISION ||..o{ DESIGN_REVISION_SOURCE : uses
+  REQUIREMENTS_REVISION o|..o{ DESIGN_REVISION_SOURCE : "requirements source"
+  DIAGRAM_REVISION o|..o{ DESIGN_REVISION_SOURCE : "diagram source"
+  DESIGN_REVISION o|..o{ DESIGN_REVISION_SOURCE : "upstream HLD"
+
+  REQUIREMENTS_REVISION {
+    bigint id PK
+    bigint requirements_document_id FK
+    integer revision_number
+    jsonb structured_content "complete snapshot"
+    timestamptz created_at
+  }
+  DIAGRAM_REVISION {
+    bigint id PK
+    bigint architecture_diagram_id FK
+    integer revision_number
+    jsonb diagram_state "complete snapshot"
+    bigint source_update_seq "durable source boundary"
+    timestamptz created_at
+  }
+  DESIGN_REVISION {
+    bigint id PK
+    bigint design_document_id FK
+    integer revision_number
+    text content "complete Markdown"
+    jsonb generation_provenance "nullable"
+    timestamptz created_at
+  }
+  DESIGN_REVISION_SOURCE {
+    bigint id PK
+    bigint design_revision_id FK
+    bigint requirements_revision_id FK "nullable"
+    bigint diagram_revision_id FK "nullable"
+    bigint source_design_revision_id FK "nullable"
+  }

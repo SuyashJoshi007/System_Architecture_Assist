@@ -21,6 +21,7 @@ Open `http://127.0.0.1:5173`. See [frontend instructions](web/README.md) for sup
 - [Requirements](docs/requirements.md)
 - [High-level design](docs/hld.md)
 - [Core database model](docs/service-plans/database-model.md)
+- [Dedicated database ER review](docs/service-plans/database-erd.md)
 - [API design](docs/service-plans/api-design.md)
 - [Frontend design and selected references](docs/service-plans/frontend-design.md)
 

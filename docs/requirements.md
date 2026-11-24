@@ -9,10 +9,12 @@
 The approved baseline below is read together with these later decisions, reconciled on 2026-11-24:
 
 - A workspace is one architecture effort; V1 has no separate Project entity. Workspace participation uses one session per user/workspace, toggled by `is_active`. Temporary disconnects affect presence; explicit leave deactivates the session.
-- Invites are specific to an authenticated account, reusable, and non-expiring. Permanent access removal must prevent rejoining with an old invite; its detailed contract remains open.
-- Draft as well as approved HLD/LLD revisions may be exported, with their revision and approval state clearly labeled. This extends FR-17.
-- Owner/designated-approver authority remains required; actions are attributed through the active workspace session.
-- Shared artifact revisions remain scoped to the workspace and survive session inactivity. LLD generation requires an explicit request after HLD approval.
+- V1 accounts use email/password with a unique trimmed lowercase email login identifier and no separate username. Account enablement is separate from workspace-session activity. Social login is deferred; detailed account/recovery/verification workflows remain to be planned.
+- The latest joining decision supersedes account-bound invitations: one reusable, non-expiring UUIDv4 `ref_id` is stored directly on each workspace. An enabled signed-in account possessing its current shared link can create/reactivate its non-revoked workspace session. There is no separate invitation table or extra public UUID. Owner removal records `workspace_session.revoked_at` and sets the session inactive; shared links cannot reactivate it, and the owner cannot be revoked. Exact removal/restoration, invalidation, and owner link-management contracts remain open.
+- Requirements revisions store complete, immutable JSONB snapshots. Diagram persistence is hybrid: durable Yjs-compatible binary updates with working-state consolidation, plus complete immutable JSONB history snapshots periodically when content changed and before AI review. The working-state/update schemas, per-diagram sequence transactions, and historical source-sequence marker are agreed in the database model. Intervals, remaining coordination contracts, and retention policies remain open.
+- Formal product approval is removed: no approval table, designated-approver flag, revision sign-off endpoints, or draft/approved lifecycle. Requirements and designs evolve through immutable saved revisions. This supersedes the earlier approval gates and authority requirements.
+- Any saved HLD/LLD revision may be exported with its revision and pinned inputs identified. Active participants can edit, request generation/review, and explicitly apply/reject suggestions; owner-only workspace administration remains separate. Actions are attributed through the active workspace session where applicable.
+- Shared artifact revisions remain scoped to the workspace and survive session inactivity. HLD generation pins a selected saved requirements revision; LLD generation explicitly selects an existing HLD revision. Neither requires sign-off. AI suggestions remain non-mutating until a participant explicitly applies them.
 
 See [HLD](hld.md), [API design](service-plans/api-design.md), and [database model](service-plans/database-model.md).
 
@@ -33,22 +35,22 @@ Help teams clarify system requirements before designing a solution, then support
 |---|---|---|
 | FR-01 | A user can describe a product or system in a prompt and provide requirements, preferred or required technologies, expected scale, and budget. Scale and budget may be marked unknown. The assistant asks for scale indicators relevant to the system and clarifies whether a budget is monthly or one-time. | Approved |
 | FR-02 | The assistant reviews the submitted requirements and gives feedback on ambiguity, conflict, missing information, and feasibility. | Approved |
-| FR-03 | The assistant asks focused questions and suggests requirement changes or additions based on relevant context such as scale, budget, data, and compliance. It distinguishes suggestions from user-approved requirements and explains the impact of assumptions where information is unknown. | Approved |
-| FR-04 | The user can review, edit, accept, or reject suggestions. The assistant must not treat unapproved suggestions as confirmed requirements or modify existing requirements/designs without approval. | Approved |
-| FR-05 | The system presents a requirements brief for user review. High-level design generation starts only after the user confirms that brief. | Approved |
+| FR-03 | The assistant asks focused questions and suggests requirement changes or additions based on relevant context such as scale, budget, data, and compliance. It distinguishes unapplied suggestions from saved requirements and explains the impact of assumptions where information is unknown. | Approved |
+| FR-04 | The user can review, edit, apply, or reject suggestions. The assistant must not treat unapplied suggestions as saved requirements or modify existing requirements/designs without an explicit Apply action. This is an edit action, not a formal approval workflow. | Revised by latest decision |
+| FR-05 | The system presents a versioned requirements brief for ongoing review and editing. An active participant can explicitly request HLD generation using a selected saved requirements revision without a sign-off gate. | Revised by latest decision |
 | FR-06 | A user can express an idea in text or create and edit an architectural design in the app. | Approved for V1 |
-| FR-07 | The assistant can review an in-app architectural design against the confirmed requirements and explain potential gaps or improvements. It suggests changes and leaves edits under the user's control; no suggested change is applied without approval. | Approved for V1 |
+| FR-07 | The assistant can review an in-app architectural design against selected saved requirements and explain potential gaps or improvements. It suggests changes and leaves edits under the user's control; applying a suggestion requires an explicit edit action. | Revised for V1 |
 | FR-08 | The assistant evaluates architecture options against requirements, scale, compliance needs, budget, operational burden, and service guarantees. It recommends open-source options when they are a suitable fit and paid options when their support, SLA, or other benefits better meet the requirements. It explains tradeoffs and assumptions and does not favor open source by default. | Approved |
-| FR-09 | A product-owned architecture knowledge layer is developed and trained on system design and architecture principles. In V1, it uses RAG over a vector store, task-specific prompt orchestration, and fine-tuning on product-curated architecture examples. The assistant combines this layer with the current project's approved requirements and in-app design. Customer project data is excluded from training unless explicitly consented to. | Approved for V1 |
+| FR-09 | A product-owned architecture knowledge layer is developed and trained on system design and architecture principles. In V1, it uses RAG over a vector store, task-specific prompt orchestration, and fine-tuning on product-curated architecture examples. The assistant combines this layer with the selected saved requirements and in-app design versions. Customer project data is excluded from training unless explicitly consented to. | Approved for V1 |
 | FR-10 | Team members can edit an architectural design concurrently and see collaborator activity. | Approved for V1 |
-| FR-11 | After requirements are confirmed, the product generates an HLD draft. The user/team must approve the HLD before the product generates its LLD. Both HLD and LLD generation are included in V1. | Approved for V1 |
+| FR-11 | On explicit request, the product generates an HLD revision from selected saved requirements and diagram snapshots. LLD generation uses an explicitly selected existing HLD revision and its pinned inputs. Both are included in V1, without formal approval prerequisites. | Revised for V1 |
 | FR-12 | The LLD describes component responsibilities, API and event contracts, data models, key workflows, justified queue or caching choices, failure handling, security, operational constraints, and decision rationale linked to requirements. It is a design document, not generated implementation code. | Approved |
-| FR-13 | AI feedback and suggested changes are non-mutating by default. The user/team must explicitly approve a change before it modifies existing or approved requirements, diagrams, or design documents. | Approved |
-| FR-14 | In V1, the workspace owner or a designated approver can approve requirements, HLDs, and AI-proposed changes. V2 can add configurable role-based approval permissions. | Approved for V1/V2 scope |
-| FR-15 | The HLD includes system boundaries, major components and interactions, key data flows, a high-level diagram, technology choices with rationale and tradeoffs, and how the design addresses approved scale, budget, security, and compliance needs. | Approved |
-| FR-16 | HLD and LLD are editable, versioned project documents linked to the requirements and diagram versions they came from. Changes and approvals can be reviewed against each document version. | Approved for V1 |
-| FR-17 | Users can export specific draft or approved HLD and LLD revisions in PDF and Markdown formats, labeled with revision number and approval state. The HLD export includes its associated architecture diagram. | Approved for V1 |
-| FR-18 | In V1, the workspace owner can invite named collaborators. Users with active workspace sessions can view, edit, and comment on that workspace's architecture effort; access is workspace-scoped. Permanent removal must prevent invite-based reactivation; the removal contract remains open. V2 can add finer-grained permissions. | Approved for V1/V2 scope |
+| FR-13 | AI feedback and suggested changes are non-mutating by default. An active participant must explicitly apply a suggestion before it changes requirements, diagrams, or design documents. Historical revisions remain immutable; no separate approval step follows applying a change. | Revised by latest decision |
+| FR-14 | All active workspace participants can edit content, request generation/review, and apply/reject AI suggestions. The owner retains workspace administration. There are no designated approvers or document sign-off records; finer-grained access permissions can be considered in V2. | Replaces earlier approval requirement |
+| FR-15 | The HLD includes system boundaries, major components and interactions, key data flows, a high-level diagram, technology choices with rationale and tradeoffs, and how the design addresses the selected scale, budget, security, and compliance constraints. | Approved |
+| FR-16 | HLD and LLD are editable, versioned project documents linked to the requirements and diagram versions they came from. Changes and pinned inputs can be reviewed against each immutable document revision. | Revised for V1 |
+| FR-17 | Users can export any saved HLD and LLD revision in PDF and Markdown formats, labeled with its revision number and pinned inputs. The HLD export includes its associated architecture diagram. No approval status is required or displayed. | Revised for V1 |
+| FR-18 | In V1, the owner can share the workspace's reusable joining link. Enabled signed-in accounts possessing the current link can join or reactivate their non-revoked workspace session. Workspace content requires an enabled account and an active, non-revoked session. The active owner can remove another participant by setting their session inactive and recording `revoked_at`, preserving history and ending collaboration access. Block owner revocation; shared-link joining cannot clear revocation. Exact management routes, invalidation, restoration, and ownership transfer remain open. V2 can add finer-grained permissions. | Agreed V1 behavior; remaining contracts open |
 | FR-19 | Each AI recommendation identifies the requirement or design element it is based on and explains its rationale, expected benefit, tradeoffs, and assumptions in plain language, including teaching relevant concepts such as queues and caching. | Approved |
 
 ## Non-functional requirements
@@ -67,20 +69,21 @@ Help teams clarify system requirements before designing a solution, then support
 
 ### V1
 
-- Requirement intake, clarification, suggestions, and an explicit requirements approval gate.
-- Product-maintained architecture knowledge applied to approved project requirements and the in-app design.
+- Requirement intake, clarification, suggestions, and continuously evolving saved requirements revisions.
+- Product-maintained architecture knowledge applied to selected saved requirements and in-app diagram snapshots.
 - An adapter/orchestration harness with at least one self-hosted model supported at launch.
-- HLD generation after requirements approval; LLD generation only after HLD approval.
+- Explicitly requested HLD generation from selected requirements and LLD generation from a selected existing HLD, with no sign-off prerequisites.
 - In-app diagram authoring, AI review, and concurrent team collaboration with visible conflict resolution.
 - Context-aware architecture cost guidance that weighs fit, SLAs, compliance, operational burden, and budget without defaulting to open source or paid services.
 - Editable, versioned HLD/LLD documents; PDF and Markdown export.
-- Owner-managed invitations, approval by the owner or designated approver, baseline data controls, monitoring, alerting, and provider-failure handling.
+- Shared workspace joining links, active-session edit access, explicit suggestion application, owner administration, baseline data controls, monitoring, alerting, and provider-failure handling.
 
 ### V2 and later
 
+- Social login beyond the V1 email/password account flow.
 - Import existing diagrams for review. Formats and sources are not yet selected.
 - Use team-provided standards and documents as context, after defining PII detection, handling, and privacy requirements.
-- Configurable role-based approval and finer-grained permissions.
+- Finer-grained access permissions.
 - Additional model adapters beyond the initial self-hosted model integration.
 
 ### Out of core scope
@@ -93,15 +96,15 @@ Help teams clarify system requirements before designing a solution, then support
 2. Which PII detection, handling, and privacy requirements must be defined before team-provided documents can be used as V2 context?
 3. What initial capacity and service targets (teams, collaborators, availability, and response times) must be met before production launch?
 
-## Requirements approval gate
+## Requirements brief and evolving inputs
 
-Before moving to HLD, the user should be able to review a concise brief containing:
+The user should be able to review a concise brief containing:
 
-- Confirmed functional and non-functional requirements
-- Accepted and rejected suggestions
+- Saved functional and non-functional requirements
+- Applied and rejected suggestions
 - Open questions and unresolved conflicts
 - Assumptions, with owners or confirmation status
 - Unknown scale, budget, and other constraints, with their impact on the proposed design
 - Priorities and measurable acceptance criteria where known
 
-HLD generation remains out of scope until the user approves that brief.
+An active participant can select a saved brief revision and request HLD generation while continuing to evolve the requirements. Open questions and assumptions remain visible; they do not create an approval state. Generation pins the selected inputs so later edits do not silently change its context.
